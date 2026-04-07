@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>学習記録アプリ</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+<style>
+#subjectButtons button{
+    margin:5px;
+    padding:8px 14px;
+    border:none;
+    border-radius:20px;
+    background:#4CAF50;
+    color:white;
+    cursor:pointer;
+}
+
+#subjectButtons button:hover{
+    background:#45a049;
+}
+
+#subjectChart {
+    max-width: 600px;
+    max-height: 600px;
+    margin: auto;
+}
+
+</style>
+</head>
+
+<body class="bg-light">
+
+<div class="container">
+
+<h1 class="mt-4 mb-4 text-center">📚 学習記録アプリ</h1>
+
+<!--今日、今週、合計、目標、連続学習記録-->
+<div class="row g-3 mb-4 text-center">
+
+<div class="col-md">
+  <div class="card shadow-sm card-today">
+    <div class="card-body text-center">
+      <h6>今日</h6>
+      <h4>{{ format_time(today_time) }}</h4>
+    </div>
+  </div>
+</div>
+
+<div class="col-md">
+<div class="card shadow-sm">
+<div class="card-body">
+<h6 class="text-muted">今週</h6>
+<h4>{{ format_time(week_time) }}</h4>
+</div>
+</div>
+</div>
+
+<div class="col-md">
+<div class="card shadow-sm">
+<div class="card-body">
+<h6 class="text-muted">合計</h6>
+<h4>{{ format_time(total_time) }}</h4>
+</div>
+</div>
+</div>
+
+<div class="col-md">
+<div class="card shadow-sm">
+<div class="card-body">
+<h6 class="text-muted">週目標</h6>
+<h4>{{ format_time(goal) }}</h4>
+</div>
+</div>
+</div>
+
+<div class="col-md">
+<div class="card shadow-sm">
+<div class="card-body">
+<h6 class="text-muted">連続</h6>
+<h4>{{ streak }}日</h4>
+</div>
+</div>
+</div>
+
+</div>
+
+
+{% if goal_achieved %}
+    <div class="alert alert-success text-center mt-3">
+        🎉 目標達成！おめでとう！
+    </div>
+{% else %}
+    <div class="alert alert-warning text-center mt-3">
+        あと <strong>
+        {{ (remaining if remaining > 0 else 0) // 60 }}時間
+        {{ (remaining if remaining > 0 else 0) % 60 }}分
+        </strong>で達成！
+    </div>
+{% endif %}
+
+
+<!--目標時間設定フォーム-->
+<form action="/set_goal" method="post" class="mt-4 mb-5">
+
+<div class="row">
+
+<div class="col">
+<input type="number" name="hour" class="form-control" placeholder="時間">
+</div>
+
+<div class="col">
+<input type="number" name="minute" class="form-control" placeholder="分">
+</div>
+
+<div class="col">
+<button class="btn btn-warning">今週の目標設定</button>
+</div>
+
+</div>
+
+</form>
+
+<div class="row mb-0 mt-4">
+
+    <!-- 棒グラフ -->
+    <div class="col-md-6">
+        <h4 class="text-center">今週の学習時間</h4>
+
+        <a href="/week/{{ offset - 1 }}">← 前の週</a>
+        <a href="/week/{{ offset + 1 }}">次の週 →</a>
+
+        <div style="height: 300px;">
+            <canvas id="weekChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 円グラフ -->
+    <div class="col-md-6">
+        <h4 class="text-center">科目ごとの学習時間</h4>
+
+        <div class="d-flex justify-content-center align-items-center mt-4" style="height:300px;">
+            <canvas id="subjectChart" style="width:80%; height:80%;"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<!-- 入力フォーム -->
+
+<div class="card mb-4 shadow-sm">
+<div class="card-body">
+
+<h5 class="mb-3">✏ 学習内容入力</h5>
+
+<form action="/add" method="post">
+
+<label class="form-label">科目</label>
+
+<div id="subjectButtons" class="mb-2">
+{% for s in subjects %}
+<button type="button" class="btn btn-outline-success btn-sm" onclick="selectSubject('{{ s }}')">
+    {{ s }}
+</button>
+{% endfor %}
+</div>
+
+<input type="text" name="subject" id="subjectInput" class="form-control mb-3" placeholder="科目を入力" required>
+
+<script>
+function selectSubject(subject){
+    document.getElementById("subjectInput").value = subject;
+}
+</script>
+
+<label class="form-label">時間</label>
+
+<div class="row g-2 align-items-center">
+
+    <div class="col">
+        <select class="form-select" name="hour">
+        {% for i in range(0,13) %}
+        <option value="{{ i }}">{{ i }}</option>
+        {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-auto">
+        <span class="fw-bold">時間</span>
+    </div>
+
+    <div class="col">
+        <select class="form-select" name="minute">
+        {% for i in range(0,60,5) %}
+        <option value="{{ i }}">{{ i }}</option>
+        {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-auto">
+        <span class="fw-bold">分</span>
+    </div>
+
+</div>
+
+<input class="form-control mb-3 mt-4" name="memo" placeholder="メモ">
+
+<button class="btn btn-primary w-100">追加</button>
+
+</form>
+
+</div>
+</div>
+
+
+<!-- 学習履歴 -->
+
+<h4>📋 学習履歴</h4>
+
+{% if logs %}
+
+<table class="table table-striped">
+
+<tr>
+<th>日付</th>
+<th>科目</th>
+<th>時間</th>
+<th>メモ</th>
+<th></th>
+</tr>
+
+{% for log in logs %}
+
+<tr>
+
+<td>{{ log.date }}</td>
+
+<td>{{ log.subject }}</td>
+
+<td>{{ format_time(log.time) }}</td>
+
+<td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+{{ log.memo }}
+</td>
+
+<td>
+
+<a href="/edit/{{ log.id }}" class="btn btn-success btn-sm">編集</a>
+
+<form action="/delete/{{ log.id }}" method="post" style="display:inline;">
+<button class="btn btn-danger btn-sm">削除</button>
+</form>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% else %}
+
+<div class="alert alert-info text-center">
+📌 まだ学習記録がありません
+</div>
+
+{% endif %}
+
+</div>
+
+
+<!--棒グラフ-->
+<script>
+const labels = {{ week_dates | tojson }};
+const datasets = {{ datasets | tojson }};
+
+const ctx = document.getElementById('weekChart');
+
+new Chart(ctx,{
+    type:'bar',
+    data:{
+        labels:labels,
+        datasets:datasets
+    },
+    options:{
+        responsive:true,
+        scales:{
+            x:{ stacked:true },
+            y:{ stacked:true }
+        },
+        plugins:{
+            tooltip:{
+                callbacks:{
+                    label:function(context){
+
+                        let hours = context.raw;
+
+                        let h = Math.floor(hours);
+                        let m = Math.round((hours - h) * 60);
+
+                        if(h === 0){
+                            return context.dataset.label + ": " + m + "分";
+                        }
+
+                        if(m === 0){
+                            return context.dataset.label + ": " + h + "時間";
+                        }
+
+                        return context.dataset.label + ": " + h + "時間" + m + "分";
+                    }
+                }
+            }
+        }
+    }    
+});
+</script>
+
+<!--円グラフ-->
+<script>
+const data = {{ subject_data | tojson }};
+const colorMap = {{ color_map | tojson }};
+
+let pie_labels;
+let pie_times;
+let pie_colors;
+let full_labels; // ←追加
+
+if(data.length === 0){
+    pie_labels = ["データなし"];
+    pie_times = [1];
+    full_labels = ["データなし"];
+    pie_colors = ["#e0e0e0"];
+}else{
+    // 元のラベル（フル）
+    full_labels = data.map(d => d[0]);
+
+    // 表示用（短縮）
+    pie_labels = full_labels.map(label => {
+        return label.length > 10 ? label.substring(0,10) + "…" : label;
+    });
+
+    pie_times = data.map(d => d[1]);
+
+    pie_colors = full_labels.map(label => colorMap[label] || "gray");
+}
+
+const ctx1 = document.getElementById('subjectChart');
+
+new Chart(ctx1, {
+    type: 'pie',
+    data: {
+        labels: pie_labels,
+        datasets: [{
+            data: pie_times,
+            backgroundColor: pie_colors
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+            padding: 5
+        },
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: {
+                    boxWidth: 20,
+                    padding: 5,
+                    font:{
+                        size : 12
+                    }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        let minutes = context.raw;
+
+                        let h = Math.floor(minutes / 60);
+                        let m = minutes % 60;
+
+                        // フルの科目名を使う
+                        let fullLabel = full_labels[context.dataIndex];
+
+                        if(h === 0){
+                            return fullLabel + ": " + m + "分";
+                        }
+
+                        if(m === 0){
+                            return fullLabel + ": " + h + "時間";
+                        }
+
+                        return fullLabel + ": " + h + "時間" + m + "分";
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+
+
+<a href="/logout" class="btn btn-danger">ログアウト</a>
+
+</body>
+</html>

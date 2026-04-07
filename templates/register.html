@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ユーザー登録</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>ユーザー登録</h2>
+
+{% if error %}
+<p class="error">{{ error }}</p>
+{% endif %}
+
+<form method="post">
+
+<label>ユーザー名</label>
+<input type="text" name="username" required>
+
+<label>パスワード</label>
+<input type="password" name="password" required>
+
+<button type="submit">登録</button>
+
+</form>
+
+<a href="/login">ログインに戻る</a>
+
+</div>
+
+</body>
+</html>
