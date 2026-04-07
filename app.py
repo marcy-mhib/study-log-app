@@ -207,7 +207,7 @@ def index(offset=0):
         cur.execute("SELECT subject, SUM(time) FROM logs WHERE user_id=? GROUP BY subject", (user_id,))
         subject_data = cur.fetchall()
 
-        # 色（適当でOK）
+        # 色
         base_colors = ["red", "blue", "green", "orange", "purple", "cyan"]
         color_map = {}
 
@@ -236,7 +236,7 @@ def index(offset=0):
         remaining=remaining
     )
 
-#追加処理を作る
+#追加処理
 @app.route("/add", methods=["POST"])
 def add():
     if "user_id" not in session:
@@ -430,7 +430,7 @@ def register():
                     "INSERT INTO users (username,password) VALUES (?,?)",
                     (username,hashed_password)
                 )
-                
+
                 conn.commit()
                 return redirect(url_for("login"))
 
